@@ -1,44 +1,66 @@
 import React, { Component } from 'react';
 import { FlatList } from 'react-native';
 
-import { getIndiaNews } from '../utils/fetchNews';
+// import { getIndiaNews } from '../utils/fetchNews';
 import Article from './Article';
+import { bindActionCreators } from "redux";
+import { connect } from "react-redux";
+import { requestApiData } from "../actions/actions";
 
 class News extends Component {
 	state = {
-		articles: [],
-		refreshing: true
+		// articles: [],
+		refreshing: true,
 	};
 
 	componentDidMount = () => {
-		this.fetchNews();
+		// this.fetchNews();
+        this.props.requestApiData();
 	};
 
-	fetchNews = () => {
-		getIndiaNews()
-			.then(articles => {
-				this.setState({ articles, refreshing: false });
-			})
-			.catch(() => this.setState({ refreshing: false }));
+	// fetchNews = () => {
+	// 	getIndiaNews()
+	// 		.then(articles => {
+	// 			this.setState({ articles, refreshing: false });
+	// 		})
+	// 		.catch(() => this.setState({ refreshing: false }));
+	// };
+
+	// handleRefresh = () => {
+	// 	this.setState({ refreshing: true }, () => this.fetchNews());
+	// };
+
+    handleRefresh = () => {
+		this.setState({ refreshing: true }, () => this.props.requestApiData());
 	};
 
-	handleRefresh = () => {
-		this.setState({ refreshing: true }, () => this.fetchNews());
-	};
+	fetchMoreData = () => {
+		this.props.requestApiData();
+	}
 
 	render() {
-		console.log(this.state.articles);
+        const { articles = [] } = this.props.data;
+        this.state.refreshing = false;
+        console.log(articles);
+
 		return (
 			<FlatList
-				data={this.state.articles}
+				data={articles}
 				renderItem={({ item }) => <Article article={item} />}
 				keyExtractor={item => item.url}
 				refreshing={this.state.refreshing}
 				onRefresh={this.handleRefresh}
-                extraData={this.state.articles}
+                extraData={articles}
+				onEndReachedThreshold={0.2}
+				onEndReached={()=> this.fetchMoreData()}
 			/>
 		);
 	}
 }
 
-export default News;
+const mapStateToProps = state => ({ data: state.data });
+
+const mapDispatchToProps = dispatch =>
+  bindActionCreators({ requestApiData }, dispatch);
+
+export default connect(mapStateToProps, mapDispatchToProps)(News);
